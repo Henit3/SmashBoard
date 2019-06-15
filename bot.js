@@ -2,12 +2,13 @@ const eris = require('eris');
 const fs = require('fs');
 const PREFIX = '!';
 const BOT_OWNER_ID = '291679678819860481';
-const bot = new eris.Client(process.env.BOT_TOKEN);
+const bot = new eris.Client("process.env.BOT_TOKEN");
 const commandForName = {};
 
 var userData = JSON.parse(fs.readFileSync('userData.json', 'utf8'));
 var winRequests = new Set(); // Contains (winner, loser) until expiry or confirmation
 var killRequests = {};
+var DMchannel;
 
 /*
 Record current ranking (shared ranking requires same win/loss and score)
@@ -108,6 +109,15 @@ function padText(input, chars) {
 	for (var i = 0; i < space; i++) out += " ";
 	return out;
 }	
+
+function saveString(msg) {
+	console.log(DMchannel + "\n" + JSON.stringify(userData));
+	bot.createMessage(DMchannel.id, JSON.stringify(userData));
+}
+async function getDMchannel() {
+	DMchannel = await bot.getDMChannel(BOT_OWNER_ID);
+}	
+
 // !win winner loser
 //  Opens win query for 60s before expiry
 commandForName['win'] = {
@@ -281,7 +291,18 @@ commandForName['save'] = {
 			   return msg.channel.createMessage('User data failed to save!');
 		   }
 	   });
+	   saveString(msg);
 	   return msg.channel.createMessage('User data successfully saved.');
+   },
+};
+
+// !load
+//  Load all user data from a JSON string
+commandForName['load'] = {
+   botOwnerOnly: true,
+   execute: (msg, args) => {
+       userData = JSON.parse(args[0]);
+	   return msg.channel.createMessage('User data successfully loaded.');
    },
 };
 
@@ -378,6 +399,7 @@ bot.on('messageCreate', async (msg) => {
 });
 
 bot.on('ready', () => {
+	getDMchannel();
 	nullToInfinity();
 	bot.editStatus("dnd", {name: "with stats! Use !help or !?", type: 0}); 
 	console.log('Up and running!')
