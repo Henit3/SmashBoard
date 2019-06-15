@@ -1,0 +1,19 @@
+{
+  "name": "smashboard",
+  "version": "1.0.0",
+  "description": "Discord Bot",
+  "main": "bot.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Henit3/SmashBoard.git"
+  },
+  "author": "Henit",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Henit3/SmashBoard/issues"
+  },
+  "homepage": "https://github.com/Henit3/SmashBoard#readme"
+}
