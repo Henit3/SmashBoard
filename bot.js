@@ -2,7 +2,7 @@ const eris = require('eris');
 const fs = require('fs');
 const PREFIX = '!';
 const BOT_OWNER_ID = '291679678819860481';
-const bot = new eris.Client('NTg4ODEwMTQyOTkzMDg4NTUx.XQKiaw.FP-IeWDIAIhLQxHrXUrAEdICsGQ');
+const bot = new eris.Client(process.env.BOT_TOKEN);
 const commandForName = {};
 
 var userData = JSON.parse(fs.readFileSync('userData.json', 'utf8'));
