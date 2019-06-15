@@ -15,5 +15,11 @@
   "bugs": {
     "url": "https://github.com/Henit3/SmashBoard/issues"
   },
-  "homepage": "https://github.com/Henit3/SmashBoard#readme"
+  "homepage": "https://github.com/Henit3/SmashBoard#readme",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "eris": "^0.10.0",
+    "express": "^4.17.1"
+  },
+  "devDependencies": {}
 }
