@@ -48,7 +48,7 @@ function changeData(id, id2, hasWon) {
 	}	
 	var rank = oldRank;
 	var newSharedRank = false;
-	console.log(userData);
+	console.log("Before scores:\n" + userData);
 	// Dependant on score first then winLoss
 	// Check all scores and take the ranking of the one just below it
 	
@@ -110,18 +110,16 @@ function changeData(id, id2, hasWon) {
 			}
 		}
 	}
-	console.log(userData);
+	console.log("After scores:\n" + userData);
 	return diff;
 	// Could instead check scores + winLoss at the end and order everything
 }
 
 function initPlayer(id) {
 	if (!userData[id]) {
-		console.log(Object.keys(userData).length+1);
 		var rank = Object.keys(userData).length+1;
 		for (var i_id in userData) {
 			const player = userData[i_id];
-			console.log(player);
 			if (player.played == 0) {
 				rank = player.rank;
 			}
@@ -213,7 +211,6 @@ commandForName['win'] = {
 commandForName['confirm'] = {
    execute: (msg, args) => {
 	   for (let pair of winRequests) {
-		   console.log(pair);
 		   if (msg.author.id == pair[1]) { // If the matching pair is found
 			   clearTimeout(killRequests[pair]); // Remove the deleting thing
 			   const w_user = msg.channel.guild.members.get(pair[0]);
@@ -283,12 +280,13 @@ commandForName['leaderboard'] = commandForName['lb'] = {
    execute: (msg, args) => {
 	   // Sort out people with their ranks
 	   var atRank = {};
+	   var players = Object.keys(userData).length;
 	   for (var i_id in userData) {
-		   var pos = userData[i_id].rank;
+		   var pos = userData[i_id].rank*players;
 		   while (!!atRank[pos]) pos += 1;
 		   atRank[pos] = i_id;
 	   }
-	   console.log(atRank);
+	   console.log("Ranks:\n" + atRank);
 	   var output = "**Leaderboard:**\n```" +
 					"┌──────┬──────────────────────┬────────┬───────┬───────┬──────────┬───────┐\n" +
 					"│ Rank │ Name                 │ Played │ Won   │ Lost  │ Win/Loss │ Score │\n" + 
