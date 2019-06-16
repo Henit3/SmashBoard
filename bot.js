@@ -48,7 +48,8 @@ function changeData(id, id2, hasWon) {
 	}	
 	var rank = oldRank;
 	var newSharedRank = false;
-	console.log("Before scores:\n" + userData);
+	console.log("Before scores:\n");
+	console.log(userData);
 	// Dependant on score first then winLoss
 	// Check all scores and take the ranking of the one just below it
 	
@@ -110,7 +111,8 @@ function changeData(id, id2, hasWon) {
 			}
 		}
 	}
-	console.log("After scores:\n" + userData);
+	console.log("After scores:\n");
+	console.log(userData);
 	return diff;
 	// Could instead check scores + winLoss at the end and order everything
 }
@@ -286,7 +288,8 @@ commandForName['leaderboard'] = commandForName['lb'] = {
 		   while (!!atRank[pos]) pos += 1;
 		   atRank[pos] = i_id;
 	   }
-	   console.log("Ranks:\n" + atRank);
+	   console.log("Ranks:\n");
+	   console.log(atRank);
 	   var output = "**Leaderboard:**\n```" +
 					"┌──────┬──────────────────────┬────────┬───────┬───────┬──────────┬───────┐\n" +
 					"│ Rank │ Name                 │ Played │ Won   │ Lost  │ Win/Loss │ Score │\n" + 
