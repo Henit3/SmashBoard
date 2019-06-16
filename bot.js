@@ -69,12 +69,17 @@ function changeData(id, id2, hasWon) {
 							rank = player.rank - 1; // Custom
 							break;
 						} else if (winLoss == player.winLoss) { // If the win/loss is the same
-							// This rank will be shared so quit
-							rank = player.rank;
-							newSharedRank = true;
-							break;
+							if (played > player.played) { // If they've played more
+								rank = player.rank - 1; // Custom
+								break;
+							} else if (played == player.played) { // If the win/loss is the same
+								// This rank will be shared so quit
+								rank = player.rank;
+								newSharedRank = true;
+								break;
+							}
 						}
-					}
+					} // This all implies we will be less than the rank below so normal procedures apply
 				}
 			}
 			if (score > player.score && rank > player.rank) { // If bigger score and higher rank
@@ -83,10 +88,14 @@ function changeData(id, id2, hasWon) {
 				if (winLoss > player.winLoss) { // If the win/loss is better
 					rank = player.rank; // Take its rank
 				} else if (winLoss == player.winLoss) { // If the win/loss is the same
-					// This rank will be shared so quit
-					rank = player.rank;
-					newSharedRank = true;
-					break;
+					if (played > player.played) { // If the win/loss is better
+						rank = player.rank; // Take its rank
+					} else if (played == player.played) { // If the win/loss is the same
+						// This rank will be shared so quit
+						rank = player.rank;
+						newSharedRank = true;
+						break;
+					} // Nothing happens if its less
 				} // Nothing happens if its less
 			} // Nothing happens if its less or of a lower rank
 		}
