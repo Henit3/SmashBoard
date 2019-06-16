@@ -288,6 +288,7 @@ commandForName['leaderboard'] = commandForName['lb'] = {
 		   while (!!atRank[pos]) pos += 1;
 		   atRank[pos] = i_id;
 	   }
+	   console.log(atRank);
 	   var output = "**Leaderboard:**\n```" +
 					"┌──────┬──────────────────────┬────────┬───────┬───────┬──────────┬───────┐\n" +
 					"│ Rank │ Name                 │ Played │ Won   │ Lost  │ Win/Loss │ Score │\n" + 
