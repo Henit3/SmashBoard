@@ -77,7 +77,6 @@ function changeData(id, id2, hasWon) {
 							break;
 						}
 					}
-					oldSharedRank = 0; // Do normal things if not (set oldSharedRank to 0 to make efficient)
 				}
 			}
 			if (score > player.score && rank > player.rank) { // If bigger score and higher rank
