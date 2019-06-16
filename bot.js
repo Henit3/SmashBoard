@@ -98,6 +98,8 @@ function changeData(id, id2, hasWon) {
 	for (var i_id in userData) {
 		if (i_id == id) continue;
 		const player = userData[i_id];
+		console.log(oldRank + " - " + player.rank + " - " + rank);
+		console.log(oldSharedRank + " / " + newSharedRank);
 		if (hasWon) {
 			// If strictly between old and new ranks or if not sharing the rank and is equal or if used to share rank, then increment
 			if ((player.rank > oldRank && rank >= player.rank) || (!newSharedRank && rank == player.rank) || (oldSharedRank != 0 && player.rank == oldRank)) {
