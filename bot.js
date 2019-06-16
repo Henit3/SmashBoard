@@ -19,7 +19,7 @@ For any ties previously, leave them untouched
 When moving up, increment all passed by 1
 When moving down, decrement all passed by 1
 */
-function changeData(id, hasWon) {
+function changeData(id, id2, hasWon) {
 	const oldRank = userData[id].rank;
 	// Increment played for both, won for the winner
 	userData[id].played++;
@@ -27,30 +27,71 @@ function changeData(id, hasWon) {
 		userData[id].won++;
 	}
 	// Calculate the new score and win/loss
-	const score = 150 * userData[id].won / (userData[id].played + 3);
+	var score;
+	var diff = 0;
+	if (hasWon) {
+		diff = Math.max(0.2*userData[id2].score, 5)
+		score = userData[id].score + diff;
+	} else {
+		score = Math.max(userData[id].score - id2, 0);
+	}	
 	userData[id].score = score;
 	const winLoss = userData[id].won / (userData[id].played - userData[id].won);
 	userData[id].winLoss = winLoss;
+	var oldSharedRank = 0; // Count number of players sharing rank
+	if (!hasWon) {
+		for (var i_id in userData) {
+			if (i_id == id) continue;
+			const player = userData[i_id];
+			if (player.rank == oldRank) oldSharedRank += 1;
+		}
+	}	
 	var rank = oldRank;
-	var sharedRank = false;
+	var newSharedRank = false;
 	console.log(userData);
-	//dependant on score first then winLoss
-	//check all scores and take the ranking of the one just below it
-	for (var i_id in userData) {
-		if (i_id == id) continue;
-		const player = userData[i_id];
-		if (score > player.score && rank > player.rank) { // If bigger score and higher rank
-			rank = player.rank; // Take its rank (leave pushing it down for separate loop)
-		} else if (score == player.score) { // If an equal score has been found
-			if (winLoss > player.winLoss) { // If the win/loss is better
-				rank = player.rank; // Take its rank
-			} else if (winLoss == player.winLoss) { // If the win/loss is the same
-				// This rank will be shared so quit
-				rank = player.rank;
-				shareRank = true;
-				break;
-			} // Nothing happens if its less
-		} // Nothing happens if its less or of a lower rank
+	// Dependant on score first then winLoss
+	// Check all scores and take the ranking of the one just below it
+	
+	// Starting from shared pos, up means push rest down, down means potentially get next lower - 1
+	// If oldSharedRank not 0, score > (oldRank + oldSharedRank + 1).score and score < oldRank.score, then rank = oldRank + oldSharedRank
+	if (!hasWon && oldSharedRank != 0 && oldRank + oldSharedRank + 1 > Object.keys(userData).length) { // If no rank below shared, make it
+		rank = oldRank + oldSharedRank; // Custom
+	} else {
+		for (var i_id in userData) {
+			if (i_id == id) continue;
+			const player = userData[i_id];
+			if (!hasWon && oldSharedRank != 0) {
+				if (oldRank + oldSharedRank + 1 == player.rank) { // Check if its the rank below to compare scores
+					if (player.score > score) {
+						rank = player.rank - 1; // Custom
+						break;
+					} else if (player.score == score) { // Check Win/Loss
+						if (winLoss > player.winLoss) { // If the win/loss is better
+							rank = player.rank - 1; // Custom
+							break;
+						} else if (winLoss == player.winLoss) { // If the win/loss is the same
+							// This rank will be shared so quit
+							rank = player.rank;
+							newSharedRank = true;
+							break;
+						}
+					}
+					oldSharedRank = 0; // Do normal things if not (set oldSharedRank to 0 to make efficient)
+				}
+			}
+			if (score > player.score && rank > player.rank) { // If bigger score and higher rank
+				rank = player.rank; // Take its rank (leave pushing it down for separate loop)
+			} else if (score == player.score) { // If an equal score has been found
+				if (winLoss > player.winLoss) { // If the win/loss is better
+					rank = player.rank; // Take its rank
+				} else if (winLoss == player.winLoss) { // If the win/loss is the same
+					// This rank will be shared so quit
+					rank = player.rank;
+					newSharedRank = true;
+					break;
+				} // Nothing happens if its less
+			} // Nothing happens if its less or of a lower rank
+		}
 	}
 	userData[id].rank = rank;
 	// Rank is now finalized, begin to shift the rest of them
@@ -58,18 +99,19 @@ function changeData(id, hasWon) {
 		if (i_id == id) continue;
 		const player = userData[i_id];
 		if (hasWon) {
-			// If strictly between old and new ranks or if not sharing the rank and is equal, then decrement
-			if ((player.rank > oldRank && rank > player.rank) || (!sharedRank && rank == player.rank)) {
+			// If strictly between old and new ranks or if not sharing the rank and is equal or if used to share rank, then increment
+			if ((player.rank > oldRank && rank > player.rank) || (!newSharedRank && rank == player.rank) || (oldSharedRank != 0 && player.rank == oldRank)) {
 				player.rank += 1; // this won't always work like if we overtake 7 where there's 444, then we would be 7??????
 			}
 		} else {
-			// If strictly between old and new ranks or if not sharing the rank and is equal, then increment
-			if ((player.rank < oldRank && rank < player.rank) || (!sharedRank && rank == player.rank)) {
+			// If strictly between old and new ranks or if not sharing the rank and is equal, then decrement
+			if ((player.rank < oldRank && rank < player.rank) || (!newSharedRank && rank == player.rank)) {
 				player.rank -= 1;
 			}
 		}
 	}
 	console.log(userData);
+	return diff;
 	// Could instead check scores + winLoss at the end and order everything
 }
 
@@ -175,19 +217,19 @@ commandForName['confirm'] = {
 		   if (msg.author.id == pair[1]) { // If the matching pair is found
 			   clearTimeout(killRequests[pair]); // Remove the deleting thing
 			   const w_user = msg.channel.guild.members.get(pair[0]);
-			   const w_mention = "<@" + pair[0] + ">";
+			   const w_name = !!w_user.nick?w_user.nick:w_user.username;
 	           const l_user = msg.channel.guild.members.get(pair[1]);
-			   const l_mention = "<@" + pair[1] + ">";
+			   const l_name = !!l_user.nick?l_user.nick:l_user.username;
 			   winRequests.delete(pair) // Delete it yourself
 			   
 			   // If the users involved don't have previous records, instantiate them
 			   initPlayer(pair[0]);
 			   initPlayer(pair[1]);
 			   // Adjust the scores for both players
-			   changeData(pair[0], true);
-			   changeData(pair[1], false);
+			   var diff = changeData(pair[0], pair[1], true);
+			   diff = changeData(pair[1], diff, false);
 			   
-			   return msg.channel.createMessage(`Confirmed ${w_mention} won against ${l_mention}.`);
+			   return msg.channel.createMessage(`Confirmed ${w_name} won against ${l_name}.`);
 		   }
 	   }
 	   return msg.channel.createMessage('I dunno what you are on about?');
@@ -221,7 +263,7 @@ commandForName['info'] = {
 	   const embed = {
 		   "title": "Stats",
 		   "description": "Played: " + userData[user.id].played + ", Won: " + userData[user.id].won + ", Win/Loss: " + userData[user.id].winLoss
-		   + "\nScore: " + userData[user.id].score + ", Ranking: " + userData[user.id].rank,
+		   + "\nScore: " + (Math.round(userData[user.id].score * 100) / 100) + ", Ranking: " + userData[user.id].rank,
 		   "color": 16151068,
 		   "thumbnail": {
 			   "url": "https://cdn.discordapp.com/avatars/" + user.id + "/" + user.avatar + ".png"
@@ -256,8 +298,8 @@ commandForName['leaderboard'] = commandForName['lb'] = {
 			const user = msg.channel.guild.members.get(i_id);
 			const name = !!user.nick?user.nick:user.username;
 			output += "│ " + padText(player.rank, 4) + " │ " + padText(name, 20) + " │ " + padText(player.played, 6) + " │ " +
-						padText(player.won, 5) + " │ " + padText((player.played-player.won), 5) + " │ " + padText(player.winLoss, 8) +
-						" │ " + padText(player.score, 5) + " │\n";
+						padText(player.won, 5) + " │ " + padText((player.played-player.won), 5) + " │ " +
+						padText(Math.round(userData[user.id].winLoss * 100) / 100, 8) +	" │ " + padText(Math.round(userData[user.id].score * 10) / 10, 5) + " │\n";
 	   }
 	   output += "└──────┴──────────────────────┴────────┴───────┴───────┴──────────┴───────┘```";
 	   msg.channel.createMessage(output);
@@ -413,5 +455,5 @@ bot.on('error', err => {
 bot.connect();
 
 /* TODO:
-	- Try get this running on Heroku
+
 */
