@@ -39,12 +39,10 @@ function changeData(id, id2, hasWon) {
 	const winLoss = userData[id].won / (userData[id].played - userData[id].won);
 	userData[id].winLoss = winLoss;
 	var oldSharedRank = 0; // Count number of players sharing rank
-	if (!hasWon) {
-		for (var i_id in userData) {
-			if (i_id == id) continue;
-			const player = userData[i_id];
-			if (player.rank == oldRank) oldSharedRank += 1;
-		}
+	for (var i_id in userData) {
+		if (i_id == id) continue;
+		const player = userData[i_id];
+		if (player.rank == oldRank) {oldSharedRank += 1;}
 	}	
 	var rank = oldRank;
 	var newSharedRank = false;
