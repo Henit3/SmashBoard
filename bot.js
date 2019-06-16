@@ -100,12 +100,14 @@ function changeData(id, id2, hasWon) {
 		console.log(oldSharedRank + " / " + newSharedRank);
 		if (hasWon) {
 			// If strictly between old and new ranks or if not sharing the rank and is equal or if used to share rank, then increment
-			if ((player.rank > oldRank && rank >= player.rank) || (!newSharedRank && rank == player.rank) || (oldSharedRank != 0 && player.rank == oldRank)) {
+			if ((player.rank < oldRank && rank < player.rank) || (!newSharedRank && rank == player.rank) || (oldSharedRank != 0 && player.rank == oldRank)) {
+				console.log("Plus");
 				player.rank += 1; // this won't always work like if we overtake 7 where there's 444, then we would be 7??????
 			}
 		} else {
 			// If strictly between old and new ranks or if not sharing the rank and is equal, then decrement
-			if ((player.rank < oldRank && rank <= player.rank) || (!newSharedRank && rank == player.rank)) {
+			if ((player.rank > oldRank && rank > player.rank) || (!newSharedRank && rank == player.rank)) {
+				console.log("Minus");
 				player.rank -= 1;
 			}
 		}
