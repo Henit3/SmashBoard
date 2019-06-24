@@ -1,158 +1,54 @@
 const eris = require('eris');
 const fs = require('fs');
+const SQLite = require("better-sqlite3");
+const sql = new SQLite('./players.sqlite');
 const PREFIX = '!';
 const BOT_OWNER_ID = '291679678819860481';
 const bot = new eris.Client(process.env.BOT_TOKEN);
 const commandForName = {};
 
-var userData = JSON.parse(fs.readFileSync('userData.json', 'utf8'));
 var winRequests = new Set(); // Contains (winner, loser) until expiry or confirmation
 var killRequests = {};
 var DMchannel;
 
-/*
-Record current ranking (shared ranking requires same win/loss and score)
-Calculate new score, win/loss and ranking
-
-So both cases must be checked for any ties
-For any ties previously, leave them untouched
-When moving up, increment all passed by 1
-When moving down, decrement all passed by 1
-*/
-function changeData(id, id2, hasWon) {
-	const oldRank = userData[id].rank;
-	// Increment played for both, won for the winner
-	userData[id].played++;
+function changeData(id, temp, hasWon, guildId, isRanked) { // temp value = {run1: id2, run2: scoreGained}
+	let player = getScore.get(id, guildId);
+	player.played++;
 	if (hasWon) {
-		userData[id].won++;
+		player.won++;
 	}
 	// Calculate the new score and win/loss
-	var score;
-	var diff = 0;
-	if (hasWon) {
-		diff = Math.max(0.2*userData[id2].score, 5)
-		score = userData[id].score + diff;
-	} else {
-		score = Math.max(userData[id].score - id2, 0);
-	}	
-	userData[id].score = score;
-	const winLoss = userData[id].won / (userData[id].played - userData[id].won);
-	userData[id].winLoss = winLoss;
-	var oldSharedRank = 0; // Count number of players sharing rank
-	for (var i_id in userData) {
-		if (i_id == id) continue;
-		const player = userData[i_id];
-		if (player.rank == oldRank) {oldSharedRank += 1;}
-	}	
-	var rank = oldRank;
-	var newSharedRank = false;
-	console.log("Before scores:\n");
-	console.log(userData);
-	// Dependant on score first then winLoss
-	// Check all scores and take the ranking of the one just below it
-	
-	// Starting from shared pos, up means push rest down, down means potentially get next lower - 1
-	// If oldSharedRank not 0, score > (oldRank + oldSharedRank + 1).score and score < oldRank.score, then rank = oldRank + oldSharedRank
-	if (!hasWon && oldSharedRank != 0 && oldRank + oldSharedRank + 1 > Object.keys(userData).length) { // If no rank below shared, make it
-		rank = oldRank + oldSharedRank; // Custom
-	} else {
-		for (var i_id in userData) {
-			if (i_id == id) continue;
-			const player = userData[i_id];
-			if (!hasWon && oldSharedRank != 0) {
-				if (oldRank + oldSharedRank + 1 == player.rank) { // Check if its the rank below to compare scores
-					if (player.score > score) {
-						rank = player.rank - 1; // Custom
-						break;
-					} else if (player.score == score) { // Check Win/Loss
-						if (winLoss > player.winLoss) { // If the win/loss is better
-							rank = player.rank - 1; // Custom
-							break;
-						} else if (winLoss == player.winLoss) { // If the win/loss is the same
-							if (played > player.played) { // If they've played more
-								rank = player.rank - 1; // Custom
-								break;
-							} else if (played == player.played) { // If the win/loss is the same
-								// This rank will be shared so quit
-								rank = player.rank;
-								newSharedRank = true;
-								break;
-							}
-						}
-					} // This all implies we will be less than the rank below so normal procedures apply
-				}
-			}
-			if (score > player.score && rank > player.rank) { // If bigger score and higher rank
-				rank = player.rank; // Take its rank (leave pushing it down for separate loop)
-			} else if (score == player.score) { // If an equal score has been found
-				if (winLoss > player.winLoss) { // If the win/loss is better
-					rank = player.rank; // Take its rank
-				} else if (winLoss == player.winLoss) { // If the win/loss is the same
-					if (played > player.played) { // If the win/loss is better
-						rank = player.rank; // Take its rank
-					} else if (played == player.played) { // If the win/loss is the same
-						// This rank will be shared so quit
-						rank = player.rank;
-						newSharedRank = true;
-						break;
-					} // Nothing happens if its less
-				} // Nothing happens if its less
-			} // Nothing happens if its less or of a lower rank
-		}
-	}
-	userData[id].rank = rank;
-	// Rank is now finalized, begin to shift the rest of them
-	for (var i_id in userData) {
-		if (i_id == id) continue;
-		const player = userData[i_id];
-		console.log(oldRank + " - " + player.rank + " - " + rank);
-		console.log(oldSharedRank + " / " + newSharedRank);
+	if (isRanked) {
+		var score;
+		var diff = 0;
 		if (hasWon) {
-			// If strictly between old and new ranks or if not sharing the rank and is equal or if used to share rank, then increment
-			if ((player.rank < oldRank && rank < player.rank) || (!newSharedRank && rank == player.rank) || (oldSharedRank != 0 && player.rank == oldRank)) {
-				console.log("Plus");
-				player.rank += 1; // this won't always work like if we overtake 7 where there's 444, then we would be 7??????
-			}
+			diff = Math.max(0.2*player.score, 5)
+			score = player.score + diff;
 		} else {
-			// If strictly between old and new ranks or if not sharing the rank and is equal, then decrement
-			if ((player.rank > oldRank && rank > player.rank) || (!newSharedRank && rank == player.rank)) {
-				console.log("Minus");
-				player.rank -= 1;
-			}
+			score = Math.max(player.score - temp, 0);
 		}
-	}
-	console.log("After scores:\n");
-	console.log(userData);
+		player.score = score;
+	}	
+	const winLoss = player.won / (player.played - player.won);
+	player.winLoss = winLoss;
+	setScore.run(player);
 	return diff;
-	// Could instead check scores + winLoss at the end and order everything
 }
 
-function initPlayer(id) {
-	if (!userData[id]) {
-		var rank = Object.keys(userData).length+1;
-		for (var i_id in userData) {
-			const player = userData[i_id];
-			if (player.played == 0) {
-				rank = player.rank;
-			}
-		}
-		userData[id] = {
+function initPlayer(userId, guildId) { // Need userID and guildID
+	let score = getScore.get(userId,guildId);
+	if (!score) {
+		score = {
+			id: `${guildId}-${userId}`,
+			user: userId,
+			guild: guildId,
 			played: 0,
 			won: 0,
 			score: 0,
 			winLoss: 0,
-			rank: rank
 		}
-	}	
-}
-
-function nullToInfinity() {
-	for (var i_id in userData) {
-		const player = userData[i_id];
-		if (player.winLoss == null) {
-			player.winLoss = Infinity;
-		}
-	}		
+		setScore.run(score);
+	}
 }
 
 function padText(input, chars) {
@@ -162,21 +58,54 @@ function padText(input, chars) {
 	return out;
 }	
 
-function saveString(msg) {
-	console.log(DMchannel + "\n" + JSON.stringify(userData));
-	bot.createMessage(DMchannel.id, JSON.stringify(userData));
+function saveString(msg, data) { // Data previously stringified into JSON
+	console.log(DMchannel + "\n" + data);
+	bot.createMessage(DMchannel.id, data);
 }
 async function getDMchannel() {
 	DMchannel = await bot.getDMChannel(BOT_OWNER_ID);
-}	
+}
+
+var getRank, getAll, getScore, setScore;
+
+function tablePrep() {
+	// Check if the table "players" exists.
+	const table = sql.prepare("SELECT count(*) FROM sqlite_master WHERE type='table' AND name = 'players';").get(); // Counts non-null entries
+	if (!table['count(*)']) {
+		// If the table isn't there, create it and setup the database correctly.
+		sql.prepare("CREATE TABLE players (id TEXT PRIMARY KEY, user TEXT, guild TEXT, played INTEGER, won INTEGER, score FLOAT, winLoss FLOAT);").run();
+		// Ensure that the "id" row is always unique and indexed.
+		sql.prepare("CREATE UNIQUE INDEX idx_players_id ON players (id);").run();
+		sql.pragma("synchronous = 1");
+		sql.pragma("journal_mode = wal");
+	}
+	// And then we have two prepared statements to get and set the score data.
+	// TODO: Maybe have a function to see number of people of this rank, and sort them based on winloss, then aggregate
+	getRank = sql.prepare("SELECT count(*) + 1 AS rank FROM players WHERE guild = ? AND score > (SELECT score FROM players WHERE user = ? AND guild = ?)"); // Ignores Win/Loss
+	getAll = sql.prepare("SELECT * FROM players WHERE guild = ? ORDER BY score DESC, winLoss DESC, played DESC;"); //.all(msg.channel.guild.id)
+	getScore = sql.prepare("SELECT * FROM players WHERE user = ? AND guild = ?");
+	setScore = sql.prepare("INSERT OR REPLACE INTO players (id, user, guild, played, won, score, winLoss) VALUES (@id, @user, @guild, @played, @won, @score, @winLoss);");
+	erase = sql.prepare("DELETE FROM players WHERE guild = ?;");
+}
 
 // !win winner loser
 //  Opens win query for 60s before expiry
 commandForName['win'] = {
    execute: (msg, args) => {
 	   // Make sure that there are two users
-	   if (args.length != 2) {
-		   return msg.channel.createMessage('Use format "!win <Winner> <Loser>"');
+	   var isRanked = true;
+	   if (args.length != 2 && args.length != 3) { // True for not (2 or 3)
+		   return msg.channel.createMessage('Use format "!win <Winner> <Loser> [friendly|ranked]"');
+	   }
+	   // Parse third argument
+	   if (args.length == 3) {
+		   if (args[2].trim().toLowerCase() == "friendly") {
+			   isRanked = false;
+		   } else if (args[2].trim().toLowerCase() == "ranked") {
+			   isRanked = true;
+		   } else {
+			   return msg.channel.createMessage('Use format "!win <Winner> <Loser> [friendly|ranked]"');
+		   }
 	   }
 	   // Make sure the players aren't the same
 	   if (args[0] == args[1]) {
@@ -197,13 +126,16 @@ commandForName['win'] = {
        }
 	   // Make sure players aren't involved in any winRequests already
 	   for (let pair of winRequests) {
-		   if (w_userId == pair[0] || l_userId == pair[0] || w_userId == pair[1] || l_userId == pair[1]) {
-			   return msg.channel.createMessage('One of the players is already involved in a win request!');
+		   for (let id of pair) {
+			   if (id != 2 && (w_userId == id || l_userId == id)) {
+				   return msg.channel.createMessage('One of the players is already involved in a win request!');
+			   }
 		   }   
 	   }
 	   // Store the person that should be confirming for the confirm command
-	   const pair = [w_userId, l_userId];
+	   const pair = [w_userId, l_userId, isRanked];
 	   winRequests.add(pair);
+	   console.log(pair);
 	   
 	   // Create a timer to reply within
 	   const timeToLive = 60;
@@ -213,6 +145,27 @@ commandForName['win'] = {
        return Promise.all([
            msg.channel.createMessage(`${l_mention} please confirm you lost to ${w_mention} by submitting "!confirm" within 60 seconds.`)
        ]);
+   },
+};
+
+// !cancel
+//  Check if person doing this is in waiting list/set
+//  If they are, remove them
+commandForName['cancel'] = {
+   execute: (msg, args) => {
+	   for (let pair of winRequests) {
+		   if (msg.author.id == pair[0] || msg.author.id == pair[1]) { // If the matching pair is found
+			   clearTimeout(killRequests[pair]); // Remove the deleting thing
+			   const w_user = msg.channel.guild.members.get(pair[0]);
+			   const w_name = !!w_user.nick?w_user.nick:w_user.username;
+	           const l_user = msg.channel.guild.members.get(pair[1]);
+			   const l_name = !!l_user.nick?l_user.nick:l_user.username;
+			   winRequests.delete(pair) // Delete it yourself
+			   
+			   return msg.channel.createMessage(`Cancelled win request for ${w_name} against ${l_name} in a ` + (pair[2]?"ranked":"friendly") + " match.");
+		   }
+	   }
+	   return msg.channel.createMessage('I dunno what you are on about?');
    },
 };
 
@@ -232,13 +185,13 @@ commandForName['confirm'] = {
 			   winRequests.delete(pair) // Delete it yourself
 			   
 			   // If the users involved don't have previous records, instantiate them
-			   initPlayer(pair[0]);
-			   initPlayer(pair[1]);
+			   initPlayer(pair[0], msg.channel.guild.id);
+			   initPlayer(pair[1], msg.channel.guild.id);
 			   // Adjust the scores for both players
-			   var diff = changeData(pair[0], pair[1], true);
-			   diff = changeData(pair[1], diff, false);
+			   var diff = changeData(pair[0], pair[1], true, msg.channel.guild.id, pair[2]);
+			   diff = changeData(pair[1], diff, false, msg.channel.guild.id, pair[2]);
 			   
-			   return msg.channel.createMessage(`Confirmed ${w_name} won against ${l_name}.`);
+			   return msg.channel.createMessage(`Confirmed ${w_name} won against ${l_name} in a ` + (pair[2]?"ranked":"friendly") + " match.");
 		   }
 	   }
 	   return msg.channel.createMessage('I dunno what you are on about?');
@@ -247,32 +200,37 @@ commandForName['confirm'] = {
 
 // !info [user]
 //  Return stats for the user including:
-//  Played, Win, Loss, Win/Loss, Score (100*Win/Played+3)
+//  Ranking function to be called here to get individual ranks
 commandForName['info'] = {
    execute: (msg, args) => {
-	   var user;
+	   var user; // rename to id, nah need user for the name
+	   var id = msg.author.id;
+	   // Just get ID through here
 	   if (args.length == 0) { // Checking info of self
-	       user = msg.channel.guild.members.get(msg.author.id);
+	       user = msg.channel.guild.members.get(msg.author.id); // Very much needed lol
 		   // If the user involved doesn't have previous records, instantiate them
-		   initPlayer(msg.author.id);
+		   initPlayer(msg.author.id, msg.channel.guild.id);
 	   } else if (args.length == 1) { // Checking another person's info
 	       // Make sure the players are in the server
-		   const id = args[0].replace(/<@!?(.*?)>/, (match, group1) => group1);
+		   id = args[0].replace(/<@!?(.*?)>/, (match, group1) => group1);
 		   const userIsInGuild = msg.channel.guild.members.get(id);
            if (!userIsInGuild) {
                return msg.channel.createMessage('This user was not found in this guild.');
            }
 		   // If the user involved doesn't have previous records, instantiate them
-		   initPlayer(id);
+		   initPlayer(id, msg.channel.guild.id);
 		   user = msg.channel.guild.members.get(id);
 	   } else {
 		   return msg.channel.createMessage('Use format "!info [Player]"');
 	   }
-	   //console.log(user);
+
+	   const player = getScore.get(id, msg.channel.guild.id);
+	   const ranks = getRank.get(msg.channel.guild.id, id, msg.channel.guild.id);
+	   console.log(ranks);
 	   const embed = {
 		   "title": "Stats",
-		   "description": "Played: " + userData[user.id].played + ", Won: " + userData[user.id].won + ", Win/Loss: " + userData[user.id].winLoss
-		   + "\nScore: " + (Math.round(userData[user.id].score * 100) / 100) + ", Ranking: " + userData[user.id].rank,
+		   "description": "Played: " + player.played + ", Won: " + player.won + ", Win/Loss: " + player.winLoss
+		   + "\nScore: " + (Math.round(player.score * 100) / 100) + ", Ranking: " + ranks.rank,
 		   "color": 16151068,
 		   "thumbnail": {
 			   "url": "https://cdn.discordapp.com/avatars/" + user.id + "/" + user.avatar + ".png"
@@ -289,31 +247,29 @@ commandForName['info'] = {
 // !leaderboard
 //  Return info for all players, sorted by score
 commandForName['leaderboard'] = commandForName['lb'] = {
+	// TODO: Big Boi names lol (30 char), maybe reduce score
+	// TODO: Use SQL query to generate the leaderboards
    execute: (msg, args) => {
 	   // Sort out people with their ranks
-	   var atRank = {};
-	   var players = Object.keys(userData).length;
-	   for (var i_id in userData) {
-		   var pos = userData[i_id].rank*players;
-		   while (!!atRank[pos]) pos += 1;
-		   atRank[pos] = i_id;
-	   }
-	   console.log("Ranks:\n");
-	   console.log(atRank);
+	   const ranked = getAll.all(msg.channel.guild.id);
+	   console.log(ranked);
 	   var output = "**Leaderboard:**\n```" +
-					"┌──────┬──────────────────────┬────────┬───────┬───────┬──────────┬───────┐\n" +
-					"│ Rank │ Name                 │ Played │ Won   │ Lost  │ Win/Loss │ Score │\n" + 
-					"├──────┼──────────────────────┼────────┼───────┼───────┼──────────┼───────┤\n";
-	   for (var rankNo in atRank) {
-		    const i_id = atRank[rankNo];
-			const player = userData[i_id];
-			const user = msg.channel.guild.members.get(i_id);
+					"┌────────────────────────────────┬────────┬──────┬──────┬──────────┬───────┐\n" +
+					"│ Name                           │ Played │ Won  │ Lost │ Win/Loss │ Score │\n" + 
+					"├────────────────────────────────┼────────┼──────┼──────┼──────────┼───────┤\n";
+	   console.log(ranked.length);			
+	   for (var i = 0; i < ranked.length; i++) {
+		    console.log("We're in");
+		    const player = ranked[i];
+		    console.log(player);
+			const user = msg.channel.guild.members.get(player.user);
+			console.log(user);
 			const name = !!user.nick?user.nick:user.username;
-			output += "│ " + padText(player.rank, 4) + " │ " + padText(name, 20) + " │ " + padText(player.played, 6) + " │ " +
-						padText(player.won, 5) + " │ " + padText((player.played-player.won), 5) + " │ " +
-						padText(Math.round(userData[user.id].winLoss * 100) / 100, 8) +	" │ " + padText(Math.round(userData[user.id].score * 10) / 10, 5) + " │\n";
+			output += "│ " + padText(name, 30) + " │ " + padText(player.played, 6) + " │ " +
+						padText(player.won, 4) + " │ " + padText((player.played-player.won), 4) + " │ " +
+						padText(Math.round(player.winLoss * 100) / 100, 8) +	" │ " + padText(Math.round(player.score * 10) / 10, 5) + " │\n";
 	   }
-	   output += "└──────┴──────────────────────┴────────┴───────┴───────┴──────────┴───────┘```";
+	   output += "└────────────────────────────────┴────────┴──────┴──────┴──────────┴───────┘```";
 	   msg.channel.createMessage(output);
    },
 };
@@ -321,8 +277,11 @@ commandForName['leaderboard'] = commandForName['lb'] = {
 // !debug
 //  For debug data only
 commandForName['debug'] = {
-   execute: (msg, args) => {   
-	   console.log(userData);
+   execute: (msg, args) => {
+	   const members = msg.channel.guild.members;
+	   for (let member of members) {
+		   console.log(member[1].user.username + ": " + member[1].user.id);
+	   }
    },
 };
 
@@ -330,7 +289,7 @@ commandForName['debug'] = {
 //  Wipes all user data
 commandForName['wipeData'] = {
    execute: (msg, args) => {   
-	   userData = {};
+	   erase.run(msg.channel.guild.id);
 	   return msg.channel.createMessage('Congratulations, I guess?');
    },
 };
@@ -339,13 +298,14 @@ commandForName['wipeData'] = {
 //  Saves all user data into a JSON file
 commandForName['save'] = {
    execute: (msg, args) => {
-       fs.writeFile('userData.json', JSON.stringify(userData), (err) => {
+	   const players = getAll.all(msg.channel.guild.id);
+       fs.writeFile('userData.json', JSON.stringify(players), (err) => {
 		   if (err) {
 			   throw err;
 			   return msg.channel.createMessage('User data failed to save!');
 		   }
 	   });
-	   saveString(msg);
+	   saveString(msg, JSON.stringify(players));
 	   return msg.channel.createMessage('User data successfully saved.');
    },
 };
@@ -355,7 +315,12 @@ commandForName['save'] = {
 commandForName['load'] = {
    botOwnerOnly: true,
    execute: (msg, args) => {
-       userData = JSON.parse(args[0]);
+	   erase.run(msg.channel.guild.id); // Wipe existing data
+       playerData = JSON.parse(args[0]);
+	   for (let player of playerData) {
+		   if (player.winLoss == null) player.winLoss = Infinity;
+		   setScore.run(player);
+	   }
 	   return msg.channel.createMessage('User data successfully loaded.');
    },
 };
@@ -369,15 +334,21 @@ commandForName['help'] = commandForName['?'] = {
 		   "description": "Here's a list of commands with their respective syntax and decriptions:",
 		   "fields": [
 			   {
-			   "name": "!win <Winner> <Loser>",
+			   "name": "!win <Winner> <Loser> [friendly|ranked]",
 			   "value": "Use this command to declare to the bot that you destroyed someone's soul. " +
 			   "This will start a 60 second timer where the loser must accept defeat by using the '!confirm'" +
-			   "command to tell the bot about their failure."
+			   "command to tell the bot about their failure. The default setting is a ranked match, which can be" +
+			   "changed by adding 'friendly' as a third argument - this won't affect your scores."
 			   },
 			   {
 			   "name": "!confirm",
 			   "value": "Used by the loser to let the bot know the win query started with the '!win' command " +
 			   "isn't bogus and that the win should be recored for eternal shame."
+			   },
+			   {
+			   "name": "!cancel",
+			   "value": "Use this to retract a win request if you did it on accident or if you're a sore loser and " +
+			   "just don't like taking the L."
 			   },
 			   {
 			   "name": "!info [Player]",
@@ -415,7 +386,8 @@ bot.on('messageCreate', async (msg) => {
       // Ignore any messages sent as direct messages.
       // The bot will only accept commands issued in
       // a guild.
-      if (!msg.channel.guild) {
+      if (!msg.channel.guild) { // If a DM, maybe put in load and save commands here
+		  
           return;
       }
 
@@ -454,10 +426,11 @@ bot.on('messageCreate', async (msg) => {
 
 bot.on('ready', () => {
 	getDMchannel();
-	nullToInfinity();
-	bot.editStatus("dnd", {name: "with stats! Use !help or !?", type: 0}); 
+	tablePrep();
+	//nullToInfinity();
+	bot.editStatus("dnd", {name: "with stats! Use !help or !?", type: 0});
 	console.log('Up and running!')
-	}
+}
 );
 
 bot.on('error', err => {
@@ -467,5 +440,5 @@ bot.on('error', err => {
 bot.connect();
 
 /* TODO:
-
+	Counter for ranked wins per week (restrict scores) TIMER KNOWLEDGE REQUIRED
 */
