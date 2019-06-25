@@ -63,7 +63,7 @@ player = {
 	"played":8,
 	"won":8,
 	"score":40,
-	"winLoss":null
+	"winLoss":Infinity
 }
 player2 = {
 	"id":'588490987983208457-297157725018652673',
@@ -89,8 +89,9 @@ function setScore(data) {
 	.then(res => console.log("Updated player data in table"))
 	.catch(e => console.error(e.stack))
 }
-setScore(player2);
-//erase(player.guild);
+//setScore(player);
+//setScore(player2);
+erase(player.guild);
 
 // getAll() to use .then() nests
 async function getAll(guildID) {
