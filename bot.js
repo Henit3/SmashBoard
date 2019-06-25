@@ -7,11 +7,8 @@ const BOT_OWNER_ID = '291679678819860481';
 const bot = new eris.Client(process.env.BOT_TOKEN);
 const commandForName = {};
 
-const client = new pg.Client({
-	user: 'postgres',
-	database: 'testing',
-	password: 'password',
-});
+console.log(process.env.DATABASE_URL);
+const client = new pg.Client(process.env.DATABASE_URL);
 client.connect();
 
 var winRequests = new Set(); // Contains (winner, loser) until expiry or confirmation
