@@ -2,12 +2,9 @@ const eris = require('eris');
 const fs = require('fs');
 const pg = require('pg');
 
-//const SQLite = require("better-sqlite3");
-//const sql = new SQLite('./players.sqlite');
-
 const PREFIX = '!';
 const BOT_OWNER_ID = '291679678819860481';
-const bot = new eris.Client("NTg4ODEwMTQyOTkzMDg4NTUx.XQKiaw.FP-IeWDIAIhLQxHrXUrAEdICsGQ");
+const bot = new eris.Client(process.env.BOT_TOKEN);
 const commandForName = {};
 
 const client = new pg.Client({
