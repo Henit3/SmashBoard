@@ -2,18 +2,92 @@ const eris = require('eris');
 const fs = require('fs');
 const pg = require('pg');
 
+const icon_emoji = {};
+icon_emoji['bayo'] = icon_emoji['bayonetta'] = '<:bayonetta:593406233789071380>';
+icon_emoji['bowser'] = '<:bowser:593406235034779698>';
+icon_emoji['bowser_jr'] = '<:bowser_jr:593406236062646292>';
+icon_emoji['chrom'] = '<:chrom:593406238885150721>';
+icon_emoji['cloud'] = '<:cloud:593406240005029889>';
+icon_emoji['kamui'] = icon_emoji['corrin'] = '<:corrin:593406243071066154>';
+icon_emoji['daisy'] = '<:daisy:593406242689646614>';
+icon_emoji['dark_pit'] = '<:dark_pit:593406282493329413>';
+icon_emoji['dark_samus'] = '<:dark_samus:593406287216377866>';
+icon_emoji['king_dedede'] = icon_emoji['dedede'] = '<:dedede:593406268631285770>';
+icon_emoji['ddk'] = icon_emoji['diddy_kong'] = '<:diddy_kong:593406532717248562>';
+icon_emoji['dk'] = icon_emoji['donkey_kong'] = '<:donkey_kong:593406533006786572>';
+icon_emoji['doc'] = icon_emoji['dr_mario'] = '<:dr_mario:593406534784909313>';
+icon_emoji['duck_hunt'] = '<:duck_hunt:593406536580202506>';
+icon_emoji['faclo'] = '<:falco:593406537586704395>';
+icon_emoji['falcon'] = icon_emoji['captain_falcon'] = '<:falcon:593406238016929825>';
+icon_emoji['fox'] = '<:fox:593406538287415306>';
+icon_emoji['doriyah'] = icon_emoji['ganon'] = icon_emoji['ganondorf'] = '<:ganondorf:593406291406225428>';
+icon_emoji['dat_boi'] = icon_emoji['greninja'] = '<:greninja:593406290269831169>';
+icon_emoji['game&watch'] = icon_emoji['game_and_watch'] = icon_emoji['gw'] = '<:gw:593406265552797709>';
+icon_emoji['icies'] = icon_emoji['ic'] = icon_emoji['ice_climbers'] = '<:ice_climbers:593406276269113344>';
+icon_emoji['ike'] = '<:ike:593406293163638784>';
+icon_emoji['incineroar'] = '<:incineroar:593406293939585025>';
+icon_emoji['inkling'] = '<:inkling:593406293503377428>';
+icon_emoji['isabelle'] = '<:isabelle:593406558898094093>';
+icon_emoji['puff'] = icon_emoji['jigglypuff'] = '<:jigglypuff:593406284120719377>';
+icon_emoji['arsene'] = icon_emoji['joker'] = '<:joker:593406287832940544>';
+icon_emoji['ken'] = '<:ken:593406296510693396>';
+icon_emoji['king_k_rool'] = icon_emoji['k_rool'] = '<:k_rool:593406539440586763>';
+icon_emoji['poyo'] = icon_emoji['kirby'] = '<:kirby:593406539683987465>';
+icon_emoji['link'] = '<:link:593406541391200266>';
+icon_emoji['little_mac'] = icon_emoji['mac'] = '<:little_mac:593406543022522378>';
+icon_emoji['lucario'] = '<:lucario:593406559405604864>';
+icon_emoji['lucas'] = '<:lucas:593406554179633171>';
+icon_emoji['lucina'] = '<:lucina:593406293696315415>';
+icon_emoji['luigi'] = '<:luigi:593406290760564746>';
+icon_emoji['mario'] = '<:mario:593406295441408010>';
+icon_emoji['marth'] = '<:marth:593406292530429954>';
+icon_emoji['mega_man'] = '<:mega_man:593406285345456138>';
+icon_emoji['mk'] = icon_emoji['meta_knight'] = '<:meta_knight:593406274306310172>';
+icon_emoji['mew2'] = icon_emoji['mewtwo'] = '<:mewtwo:593406277963743265>';
+icon_emoji['mii'] = '<:mii:593406290596855809>';
+icon_emoji['ness'] = '<:ness:593406282535534641>';
+icon_emoji['olimar'] = '<:olimar:593406560265568267>';
+icon_emoji['pac'] = icon_emoji['pac_man'] = '<:pac_man:593406546759647232>';
+icon_emoji['palu'] = icon_emoji['palutena'] = '<:palutena:593406562526298112>';
+icon_emoji['peach'] = '<:peach:593406561314144266>';
+icon_emoji['pichu'] = '<:pichu:593406558109564949>';
+icon_emoji['plant'] = icon_emoji['pirahna_plant'] = '<:pirahna_plant:593406558432395289>';
+icon_emoji['pikachu'] = '<:pikachu:593406270304944138>';
+icon_emoji['pit'] = '<:pit:593406295244275713>';
+icon_emoji['pkmn_trainer'] = icon_emoji['pokemon_trainer'] = '<:pokemon_trainer:593406290827542529>';
+icon_emoji['richter'] = '<:richter:593406292916437022>';
+icon_emoji['ridley'] = '<:ridley:593406282287808513>';
+icon_emoji['rob'] = '<:rob:593406286117208102>';
+icon_emoji['robin'] = '<:robin:593406291070812199>';
+icon_emoji['rosalina_and_luma'] = icon_emoji['rosa'] = icon_emoji['rosalina'] = '<:rosalina:593406290907365377>';
+icon_emoji['roy'] = '<:roy:593406294203826176>';
+icon_emoji['ryu'] = '<:ryu:593406296162697226>';
+icon_emoji['samus'] = '<:samus:593406560483672088>';
+icon_emoji['zelda2'] = icon_emoji['sheik'] = '<:sheik:593406560110379034>';
+icon_emoji['shulk'] = '<:shulk:593406561507082241>';
+icon_emoji['simon'] = '<:simon:593406561460944907>';
+icon_emoji['there'] = icon_emoji['snake'] = '<:snake:593406560915685387>';
+icon_emoji['sonic'] = '<:sonic:593406286452883457>';
+icon_emoji['toon_link'] = '<:toon_link:593406290177294356>';
+icon_emoji['killager'] = icon_emoji['villager'] = '<:villager:593406286641627136>';
+icon_emoji['wario'] = '<:wario:593406295961501698>';
+icon_emoji['wii_fit_trainer'] = icon_emoji['wii_fit'] = '<:wii_fit:593406276642537472>';
+icon_emoji['wolf'] = '<:wolf:593406292035371018>';
+icon_emoji['yoshi'] = '<:yoshi:593406269025419264>';
+icon_emoji['young_link'] = '<:young_link:593406295042818065>';
+icon_emoji['zelda'] = '<:zelda:593406295533420554>';
+icon_emoji['zero_suit'] = icon_emoji['zero_suit_samus'] = icon_emoji['zss'] = '<:zss:593406295021846529>';
+
 const PREFIX = '!';
-const BOT_OWNER_ID = '291679678819860481';
 const bot = new eris.Client(process.env.BOT_TOKEN);
 const commandForName = {};
 
-console.log(process.env.DATABASE_URL);
 const client = new pg.Client(process.env.DATABASE_URL);
 client.connect();
 
 var winRequests = new Set(); // Contains (winner, loser) until expiry or confirmation
-var killRequests = {};
-var DMchannel;
+var killRequests = {}; // Contains mappings to functions that kill winRequests, clearRequests or removing reactions
+var clearRequest; // Contains number of messages to be cleared or null
 
 // MISC FUNCTIONS:
 function padText(input, chars) {
@@ -24,11 +98,12 @@ function padText(input, chars) {
 }	
 
 function saveString(msg, data) { // Data previously stringified into JSON
-	console.log(DMchannel + "\n" + data);
-	bot.createMessage(DMchannel.id, data);
-}
-async function getDMchannel() {
-	DMchannel = await bot.getDMChannel(BOT_OWNER_ID);
+	bot.getDMChannel(process.env.BOT_OWNER_ID)
+	.then(DMchannel => {
+		//console.log(DMchannel + "\n" + data);
+		bot.createMessage(DMchannel.id, data);
+	})
+	.catch(e => console.error(e.stack))
 }
 
 // MAIN FUNCTIONAL CODE:
@@ -284,11 +359,11 @@ commandForName['info'] = {
 
 		getScore(id, msg.channel.guild.id)
 		.then(player => {
-			console.log(player);
+			//console.log(player);
 			// Use getRank to get rank
 			getRank(id, msg.channel.guild.id)
 			.then(rank => {
-				console.log(rank);
+				//console.log(rank);
 				// Create and send embed
 				const embed = {
 					"title": "Stats",
@@ -317,17 +392,17 @@ commandForName['leaderboard'] = commandForName['lb'] = {
 	execute: (msg, args) => {
 		getAll(msg.channel.guild.id)
 		.then(ranked => {
-			console.log(ranked);
+			//console.log(ranked);
 			var output =	"**Leaderboard:**\n```" +
 							"┌────────────────────────────────┬────────┬──────┬──────┬──────────┬───────┐\n" +
 							"│ Name                           │ Played │ Won  │ Lost │ Win/Loss │ Score │\n" + 
 							"├────────────────────────────────┼────────┼──────┼──────┼──────────┼───────┤\n";
-			console.log(ranked.length);			
+			//console.log(ranked.length);			
 			for (var i = 0; i < ranked.length; i++) {
 				const player = ranked[i];
-				console.log(player);
+				//console.log(player);
 				const user = msg.channel.guild.members.get(player.user);
-				console.log(user);
+				//console.log(user);
 				const name = !!user.nick?user.nick:user.username;
 				output += "│ " + padText(name, 30) + " │ " + padText(player.played, 6) + " │ " +
 						padText(player.won, 4) + " │ " + padText((player.played-player.won), 4) + " │ " +
@@ -343,10 +418,101 @@ commandForName['leaderboard'] = commandForName['lb'] = {
 // !debug
 //  For debug data only
 commandForName['debug'] = {
+	botOwnerOnly: true,
 	execute: (msg, args) => {
-		const members = msg.channel.guild.members;
-		for (let member of members) {
-			console.log(member[1].user.username + ": " + member[1].user.id);
+		return msg.channel.createMessage("No more bugs in this server; you're welcome! " + "<:sheeba:588660686096171012>");
+	},
+};
+
+// !react <Character>
+//  Responds with corresponding smash icon
+commandForName['react'] = {
+	execute: (msg, args) => {
+		if (args.length != 1) { // Checking info of self
+			return msg.channel.createMessage('Use format "!react <Character>"');
+		}
+		msg.channel.getMessages(2)
+		.then(messages => {
+			const emoji = icon_emoji[args[0]].substring(2,icon_emoji[args[0]].length-1);
+			//console.log(messages[1])
+			messages[1].addReaction(emoji)
+			.then(res => {
+				msg.delete();
+				// Create a timer to delete after
+				const timeToLive = 10;
+				killRequests[messages[1].id+emoji] = setTimeout( function(){
+					messages[1].removeReaction(emoji)
+					.catch(e => console.error(e.stack))
+					} , timeToLive*1000);
+			})
+			.catch(e => console.error(e.stack))
+		})
+		.catch(e => console.error(e.stack))
+	},
+};
+
+// !emote <Message with !character>
+//  Responds with smash icons edited in
+commandForName['emote'] = {
+	execute: (msg, args) => {
+		if (args.length == 0) { // Checking info of self
+			return msg.channel.createMessage('Use format "!emote <Message with !character>"');
+		}
+		user = msg.channel.guild.members.get(msg.author.id);
+		var found = false;
+		var message = msg.content;
+		//console.log(message);
+		for (key in icon_emoji) {
+			if (message.toLowerCase().includes(PREFIX+key.toLowerCase())) {
+				const pattern = new RegExp(PREFIX+key, 'gi');
+				found = true;
+				message = message.replace(pattern, icon_emoji[key]);
+			}
+		}
+		//console.log(message);
+		if (found) {
+			msg.delete()
+			.then(msg.channel.createMessage((!!user.nick?user.nick:user.username) + ": " + message.substring(7)))
+			.catch(e => console.error(e.stack));
+		} else {
+			return msg.channel.createMessage("No smashers there");
+		}
+	},
+};
+
+// !clear <Messages>
+//  Clears out the number of messages specified
+commandForName['clear'] = {
+	execute: (msg, args) => {
+		if (args.length != 1) {
+			if (killRequests[-1] != null) {
+				msg.channel.purge(clearRequest+3)
+				.then(clearRequest = null)
+				.catch(e => console.error(e.stack));
+				clearTimeout(killRequests[-1]);
+				return;
+			} else {
+				return msg.channel.createMessage('Use format "!clear <Messages>"');
+			}
+		}
+		if (isNaN(args[0])) return msg.channel.createMessage("Enter a number for the limit");
+		const toClear = parseInt(args[0])+1;
+		if (toClear > 10) {
+			if (clearRequest != null) {
+				clearRequest += 2;
+				return msg.channel.createMessage("At least wait until the current clear request is handled or expired!");
+			}
+			// Create a timer to reply within
+			clearRequest = toClear-1;
+			const timeToLive = 60;
+			killRequests[-1] = setTimeout( function(){
+				clearRequest = null;
+				msg.channel.createMessage('Confirmation request expired, use !clear <messages> to try delete again');
+				} , timeToLive*1000);
+			msg.channel.createMessage("Wow, that's a lot of messages to delete. Please use !clear on it's own to confirm you're sure");
+		} else {
+			msg.channel.purge(toClear)
+			.catch(e => console.error(e.stack));
 		}
 	},
 };
@@ -354,6 +520,7 @@ commandForName['debug'] = {
 // !wipeData
 //  Wipes all user data
 commandForName['wipeData'] = {
+	botOwnerOnly: true,
 	execute: (msg, args) => {   
 		erase(msg.channel.guild.id);
 		return msg.channel.createMessage('Congratulations, I guess?');
@@ -361,17 +528,11 @@ commandForName['wipeData'] = {
 };
 
 // !save
-//  Saves all user data into a JSON file
+//  Saves all user data into a JSON string
 commandForName['save'] = {
 	execute: (msg, args) => {
 		getAll(msg.channel.guild.id)
 		.then(players => {
-			fs.writeFile('userData.json', JSON.stringify(players), (err) => {
-				if (err) {
-					throw err;
-					return msg.channel.createMessage('User data failed to save!');
-				}
-			});
 			saveString(msg, JSON.stringify(players));
 			return msg.channel.createMessage('User data successfully saved.');
 		})
@@ -384,17 +545,23 @@ commandForName['save'] = {
 commandForName['load'] = {
 	botOwnerOnly: true,
 	execute: (msg, args) => {
+		if (args.length == 0) return msg.channel.createMessage('Gimme something to work with here Jerry!');
 		erase(msg.channel.guild.id); // Wipe existing data
-		playerData = JSON.parse(args[0]);
-		for (let player of playerData) {
-			if (player.winloss == null) player.winloss = Infinity;
-			setScore(player);
-		}
-		return msg.channel.createMessage('User data successfully loaded.');
+		msg.delete()
+		.then(res => {
+			playerData = JSON.parse(args[0]);
+			for (let player of playerData) {
+				if (player.winloss == null) player.winloss = Infinity;
+				setScore(player);
+			}
+			return msg.channel.createMessage('User data successfully loaded.');
+		})
+		.catch(e => console.error(e.stack))
 	},
 };
 
 // !help
+//  TO ADD: !clear, !react, !emote
 //  Returns all commands available to the user
 commandForName['help'] = commandForName['?'] = {
 	execute: (msg, args) => {
@@ -433,6 +600,22 @@ commandForName['help'] = commandForName['?'] = {
 				"value": "Saves everyone's stats for good into a file, don't worry about this too much."
 				},
 				{
+				"name": "!react <Character>",
+				"value": "Makes the bot react to the previous message with a smash character of your choice for 10 seconds; use " +
+				"this as an opportunity to react with it yourself! If the character name doesn't work for you, tell my owner."
+				},
+				{
+				"name": "!emote <Message with !character>",
+				"value": "Gets you your favourite smash character icons like !react but you can use them in a message as !character " +
+				"to tell the bot to insert the icon there. Get creative and smash the competition with your messages!"
+				},
+				{
+				"name": "!clear <Messages>",
+				"value": "Made a mistake? Nobody needs to know! Simply enter the number of messages you want the bot to discreetly " +
+				"take down and it'll do the dirty work for you. Note that it'll get suspicious for numbers larger than 10 so you'll " +
+				"have to confirm with !clear after the inital request - only one of these clear requests can be done at a time."
+				},
+				{
 				"name": "!help   `!?`",
 				"value": "How did you even get here? :thinking:"
 				}
@@ -448,6 +631,7 @@ commandForName['help'] = commandForName['?'] = {
 // !rock, !paper, !scissor
 //  Declare move, if second between 2 players (remove from list/set if done), then resolve
 
+
 bot.on('messageCreate', async (msg) => {
 	try {
 		const content = msg.content;
@@ -455,8 +639,7 @@ bot.on('messageCreate', async (msg) => {
 		// Ignore any messages sent as direct messages.
 		// The bot will only accept commands issued in
 		// a guild.
-		if (!msg.channel.guild) { // If a DM, maybe put in load and save commands here
-			
+		if (!msg.channel.guild) { // If a DM, ignore
 			return;
 		}
 
@@ -494,9 +677,7 @@ bot.on('messageCreate', async (msg) => {
 });
 
 bot.on('ready', () => {
-	getDMchannel();
 	tablePrep();
-	//nullToInfinity();
 	bot.editStatus("dnd", {name: "with stats! Use !help or !?", type: 0});
 	console.log('Up and running!')
 }
