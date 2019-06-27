@@ -660,7 +660,7 @@ bot.on('messageCreate', async (msg) => {
 
 		// If this command is only for the bot owner, refuse
 		// to execute it for any other user.
-		const authorIsBotOwner = msg.author.id === BOT_OWNER_ID;
+		const authorIsBotOwner = msg.author.id === process.env.BOT_OWNER_ID;
 		if (command.botOwnerOnly && !authorIsBotOwner) {
 			return await msg.channel.createMessage('Hey, only my owner can issue that command!');
 		}
