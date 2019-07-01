@@ -147,7 +147,7 @@ function initPlayer(userId, guildId) {
 				score: 0,
 				winloss: 0,
 			}
-			setScore.run(score);
+			setScore(score);
 		}
 	})
 	.catch(e => console.error(e.stack))
